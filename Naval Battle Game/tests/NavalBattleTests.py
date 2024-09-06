@@ -1,183 +1,79 @@
 import sys
-import os
+sys.path.append("src")
 
-# Agregar la ruta al directorio raíz del proyecto
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from Program.NavalBattle import NavalBattle
+from Program.NavalBattle import *
 
-from src.NavalBattle import NavalBattle
-import unittest
+if __name__ == "__main__":
+    navalBattle = NavalBattle()
+    print("Enter the size of the board you want to play on:")
+    print("(min:5, max:9)")
 
-class GameTest(unittest.TestCase):
+    # Control de entrada para las dimensiones del tablero
+    while True:
+        try:
+            w = int(input("Columns: "))
+            h = int(input("Rows: "))
+            navalBattle.generateBoard(w, h)
+            break
+        except BoardError as e:
+            print(f"Error: {e}")
+        except BoardIsBigAndSmall as e:
+            print(f"Error: {e} Board exceeds the limit in one dimension and isn't big enough in the other")
+        except BoardIsTooSmall as e:
+            print(f"Error: {e} Board doesn't have enough size")
+        except BoardIsTooBig as e:
+            print(f"Error: {e} Board exceeds the limit size")
+        except ValueError:
+            print("Please enter a valid number for columns and rows.")    
 
-#Funcionalidad #1
-#Inicializar campo de juego
+    # Control de entrada para el número de barcos
+    while True:
+        try:
+            max_ships = h - 1 if w > h else w - 1
+            print(f"Maximum {max_ships} ships allowed")
+            num_ships = int(input("Enter the number of ships: "))
+            navalBattle.addShips(num_ships, max_ships)
+            break
+        except NotEnoughSpace as e:
+            print(f"Error: {e} That quantity wouldn't fit in the board")
+        except BoardError as e:
+            print(f"Error: {e} There's no board yet")
+        except ValueError:
+            print("Please enter a valid number for ships.")
+
+    print("Enter the coordinate you want to attack in the format: C2")
+    print("Where 'C' is the column and '2' is the row")
+    navalBattle.showInfo()
+    navalBattle.showPlayerBoard()
     
-    #Casos normales
+    while True:
+        try:
+            coordinate = input("Coordinate: ")
+            if navalBattle.isCoordinateAlreadyShot(coordinate):
+                print("Don't waste your shots")
+            else:
+                if navalBattle.shoot(coordinate):
+                    print(navalBattle.EMOJIS["ship"], "HIT", navalBattle.EMOJIS["colition"])
+                    if navalBattle.isShipDowned():
+                        print("Downed Ship")
+                        for i in range(navalBattle.last_hit):
+                            print(navalBattle.EMOJIS["colition"], end=" ")
+                        print("\n")
+                else:
+                    print(navalBattle.EMOJIS["water"], "WATER", navalBattle.EMOJIS["wave"])
 
-    def testBoard(self):
-        expected_board = [
-            [0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0]]
-        
-        game = NavalBattle.NavalBattle()
-        board = game.generateBoard()
-        self.assertEqual(expected_board, board)
+            if navalBattle.ships_quantity == 0:
+                navalBattle.showPlayerBoard()
+                print("YOU WON!!")
+                break
+            navalBattle.showPlayerBoard()
 
-    def testBoardSizes(self):
-        expexted_board=[
-            [0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0],]
-
-        game = NavalBattle.NavalBattle()
-        board= game.generateBoard()
-        self.assertEqual(expexted_board, board)
-
-    def testFourShips(self):
-        game = NavalBattle.NavalBattle()
-        game.generateBoard(5,5)
-        game.addShips(4)
-        self.assertEqual(4, game.ships)
-
-    #Casos extraordinarios
-    def testSmallBoard(self):
-        expexted_board=[
-            [0,0,0,0,0],
-            [0,0,0,0,0],
-            [0,0,0,0,0],
-            [0,0,0,0,0],
-            [0,0,0,0,0],]
-
-        game = NavalBattle.NavalBattle()
-        board= game.generateBoard(5,5)
-        self.assertEqual(expexted_board, board)
-
-
-
-    def testBigBoard(self):
-        game= NavalBattle.NavalBattle()
-        self.assertRaises(NavalBattle.BoardIsTooBig, game.generateBoard, 21, 5)
-
-    def testBigAndSmall(self):
-        expexted_board=[
-            [0,0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0,0],]
-
-        game = NavalBattle.NavalBattle()
-        board= game.generateBoard(9,9)
-        self.assertEqual(expexted_board, board)
-
-
-    #Casos de error
-    def testZeroBoard(self):
-        game= NavalBattle.NavalBattle()
-        self.assertRaises(NavalBattle.BoardError, game.generateBoard, 0, 6)
-    
-    def testnegativeBoard(self):
-        game= NavalBattle.NavalBattle()
-        self.assertRaises(NavalBattle.BoardError, game.generateBoard, 6, -5)
-
-    def testShipsInNoBoard(self):
-        game = NavalBattle.NavalBattle()
-        self.assertRaises(NavalBattle.BoardError, game.addShips, 4)
-
-    def testIDontKnow(self):
-        game = NavalBattle.NavalBattle()
-        game.generateBoard()
-
-
-#Funcionalidad 2
-#Disparar
-    #Casos normales
-    def testHitShot(self):
-        game = NavalBattle.NavalBattle()
-        game.generateBoard(5,5)
-        game.addShipsInPosition((1,2))
-        resultado = game.shoot("B3")
-
-        self.assertEqual(resultado, True)
-
-    def testMissedShot(self):
-        game = NavalBattle.NavalBattle()
-        game.generateBoard(5,5)
-        resultado = game.shoot("C2")
-
-        self.assertEqual(resultado, False)
-
-    def testDownedShip(self):
-        game = NavalBattle.NavalBattle()
-        game.generateBoard()
-        game.addShipsInPosition((0,0), False, 2)
-        game.shoot("A1")
-        game.shoot("B1")
-        
-        self.assertTrue(game.downedShip())
-
-
-    def testNotDownedShip(self):
-        game = NavalBattle.NavalBattle()
-        game.generateBoard()
-        game.addShipsInPosition((0,0), False, 2)
-        game.shoot("A1")
-        
-        self.assertFalse(game.downedShip())
-
-    #Casos extraordinarios
-    def testShotSamePlace(self):
-        game= NavalBattle.NavalBattle()
-        game.generateBoard()
-        game.addShipsInPosition((2,1), False, 2)
-        game.shoot("C2")
-        self.assertFalse(game.shoot("C2"))
-
-
-    def testCornerShot(self):
-        game = NavalBattle.NavalBattle()
-        game.generateBoard(5,5)
-        game.addShipsInPosition((4,0))
-        self.assertEqual(game.shoot("e1"), True)
-
-
-    def testLastOne(self):
-        
-        game = NavalBattle.NavalBattle()
-        game.generateBoard(5,5)
-        game.addShipsInPosition((4,0))
-        self.assertEqual(game.shoot("e3"), True)
-
-    #Casos de error
-    def testInvalidCoordinate(self):
-        game = NavalBattle.NavalBattle()
-        game.generateBoard()
-        self.assertRaises(NavalBattle.InvalidCoordinate, game.shoot, "A21")
-
-    def testInvalidCoordinate2(self):
-        game = NavalBattle.NavalBattle()
-        game.generateBoard()
-        self.assertRaises(NavalBattle.ColumnOutOfRange, game.shoot, "44")
-
-    def testColumnOutOfRange(self):
-        game = NavalBattle.NavalBattle()
-        game.generateBoard()
-        self.assertRaises(NavalBattle.ColumnOutOfRange, game.shoot, "K1")
-
-    def testRowOutOfRange(self):
-        game = NavalBattle.NavalBattle()
-        game.generateBoard()
-        self.assertRaises(NavalBattle.RowOutOfRange, game.shoot, "A9")
-
-
-if __name__ == '__main__':
-    unittest.main()
+        except InvalidCoordinate:
+            print("Invalid coordinate format. Please use format like 'C2'.")
+        except RowOutOfRange as e:
+            print(f"Error: {e} Row out of range")
+        except ColumnOutOfRange as e:
+            print(f"Error: {e} Column out of range")
+        except Exception as e:
+            print(f"Error: {e}")
